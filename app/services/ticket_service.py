@@ -1,42 +1,104 @@
-from app.models.ticket_store import ticket_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
-def create_ticket(ticket):
-    ticket_id = len(ticket_db) + 1
-    new_ticket = {
-        "id": ticket_id,
-        "title": ticket.title,
-        "priority": ticket.priority,
-        "status": "open"
-    }
-    ticket_db[ticket_id] = new_ticket
-    return new_ticket
+from app.models.ticket import Ticket, StatusEnum
+from app.repositories.ticket_store import TicketRepository
+from app.schemas.ticket import (
+    CreateTicketRequest,
+    UpdateTicketRequest,
+)
+
+repository = TicketRepository()
+
+async def create_ticket(
+    db: AsyncSession,
+    ticket: CreateTicketRequest,
+):
+    new_ticket = Ticket(
+        title=ticket.title,
+        priority=ticket.priority,
+        status=StatusEnum.OPEN,
+    )
+    return await repository.create(db, new_ticket)
 
 
-def get_all_tickets(status=None, priority=None):
-    tickets = list(ticket_db.values())
+async def get_all_tickets(
+    db: AsyncSession,
+    status: str | None = None,
+    priority: str | None = None,
+):
+    tickets = await repository.get_all(db)
+
     if status:
         tickets = [
-            ticket
-            for ticket in tickets
-            if ticket["status"] == status
+            ticket for ticket in tickets
+            if ticket.status.value == status
         ]
+
     if priority:
         tickets = [
-            ticket
-            for ticket in tickets
-            if ticket["priority"] == priority
+            ticket for ticket in tickets
+            if ticket.priority.value == priority
         ]
-    return { "tickets": tickets ,"message": "Tickets retrieved successfully" }
 
-def get_ticket(ticket_id):
-    return ticket_db.get(ticket_id)
+    return tickets
 
-def update_ticket(ticket_id, ticket):
-    existing_ticket = ticket_db.get(ticket_id)
-    if not existing_ticket:
+
+async def get_ticket(
+    db: AsyncSession,
+    ticket_id: int,
+):
+    return await repository.get_by_id(
+        db,
+        ticket_id,
+    )
+
+
+async def update_ticket(
+    db: AsyncSession,
+    ticket_id: int,
+    request: UpdateTicketRequest,
+):
+    ticket = await repository.get_by_id(
+        db,
+        ticket_id,
+    )
+
+    if ticket is None:
         return None
-    existing_ticket["status"] = ticket.status
-    return existing_ticket
 
-def delete_ticket(ticket_id):
-    return ticket_db.pop(ticket_id, None)
+    if request.title is not None:
+        ticket.title = request.title
+
+    if request.priority is not None:
+        ticket.priority = request.priority
+
+    if request.status is not None:
+        ticket.status = request.status
+
+    if request.assignee is not None:
+        ticket.assignee = request.assignee
+
+    return await repository.update(
+        db,
+        ticket,
+    )
+
+
+async def delete_ticket(
+    db: AsyncSession,
+    ticket_id: int,
+):
+    ticket = await repository.get_by_id(
+        db,
+        ticket_id,
+    )
+
+    if ticket is None:
+        return False
+
+    await repository.delete(
+        db,
+        ticket,
+    )
+
+    return True
