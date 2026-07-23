@@ -1,6 +1,6 @@
 from locust import HttpUser, between, task
  
- 
+
 class TicketApiUser(HttpUser):
     wait_time = between(1, 3)
  

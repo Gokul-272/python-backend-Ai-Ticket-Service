@@ -32,7 +32,7 @@ app.middleware("http")(add_response_time)
 @app.get("/")
 async def root():
     return {"message": "Welcome to the AI Service Desk API!"}
-@app.get("/health")
+@app.get("/health" ,tags=["Health Check"])
 async def health():
     try:
         async with AsyncSessionLocal() as session:
@@ -55,7 +55,7 @@ async def health():
             }
         )
 
-@app.get("/ready")
+@app.get("/ready", tags=["Readiness Check"])
 async def ready():
     return {
         "status": " Ready ,All Set to Goooo!"
