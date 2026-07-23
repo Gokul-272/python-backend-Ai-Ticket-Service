@@ -1,49 +1,69 @@
-# from fastapi import FastAPI
-# from app.api.v1.tickets import router as ticket_router
-
-# app = FastAPI(
-#     title="Ticket Management API",
-# )
-# app.include_router(ticket_router)
-
-# @app.get("/")
-# def home():
-#     return {
-#         "message": "Welcome to AI Service Desk - python backend task"
-#     }
-
-
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI
-
+from datetime import datetime, timezone
+from app.core.middleware import add_response_time
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from app.core.cors import setup_cors
 from app.api.v1.tickets import router as ticket_router
-from app.core.database import Base, engine
-
+from app.api.v1.ai import router as ai_router
+from app.core.database import AsyncSessionLocal, Base, engine, use_in_memory_fallback, is_in_memory
+from app.core.exceptions import ServiceDeskException
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Create database tables on startup
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
+async def lifespan(app):
+    app.state.is_in_memory = is_in_memory()
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception:
+        use_in_memory_fallback()
+        app.state.is_in_memory = True
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     yield
 
-    # Shutdown logic (if needed later)
 
+app = FastAPI(title="AI Service Desk",version="1.0.0",lifespan=lifespan,)
+setup_cors(app)
+@app.exception_handler(ServiceDeskException)
+async def service_desk_exception_handler(request, exc: ServiceDeskException):
+    return JSONResponse(status_code=exc.status_code,content={"detail": exc.message})
 
-app = FastAPI(
-    title="AI Service Desk",
-    version="1.0.0",
-    lifespan=lifespan,
-)
-
+app.middleware("http")(add_response_time)
 
 @app.get("/health")
-async def health():
+async def health(request: Request):
+    try:
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        
+        status_msg = "healthy"
+        if getattr(request.app.state, "is_in_memory", False):
+            status_msg += " (In-memory DB)"
+            
+        return {
+            "status": status_msg,
+            "service": "AI Service Desk",
+            "version": "1.0.0",
+            "timestamp": datetime.now(timezone.utc)
+        }
+    except Exception:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "service": "AI Service Desk",
+                "version": "1.0.0",
+                "timestamp": datetime.now(timezone.utc)
+            }
+        )
+
+@app.get("/ready")
+async def ready():
     return {
-        "status": "healthy"
+        "status": " Ready ,All Set to Goooo!"
     }
 
-
 app.include_router(ticket_router)
+app.include_router(ai_router)

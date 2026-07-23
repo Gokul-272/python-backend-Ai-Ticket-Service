@@ -1,0 +1,24 @@
+# Ignore virtual environment
+.venv/
+venv/
+env/
+
+# Ignore python caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Ignore local config/secrets
+.env
+
+# Ignore version control
+.git/
+.gitignore
+
+# Ignore build artifacts
+dist/
+build/
+*.egg-info/
