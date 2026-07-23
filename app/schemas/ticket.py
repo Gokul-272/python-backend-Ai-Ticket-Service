@@ -42,7 +42,7 @@ class TicketResponse(BaseModel):
     created_at: datetime
     assignee: Optional[str] = None
     email: Optional[str] = None
-    model_config = ConfigDict(from_attributes=True) 
+
 
     @computed_field
     @property 

@@ -3,9 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ticket import Ticket, PriorityEnum, StatusEnum
 
-
 class TicketRepository:
-
+    
     async def create(self,db: AsyncSession,ticket: Ticket,) -> Ticket:
         db.add(ticket)
         await db.flush()
