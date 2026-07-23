@@ -6,7 +6,7 @@ class CreateTicketRequest(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     priority: Literal["low", "medium", "high"]
     email: str = Field(..., pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
-
+    
     @field_validator("title")
     @classmethod
     def validate_title(cls, value: str) -> str:

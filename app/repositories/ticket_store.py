@@ -17,7 +17,6 @@ class TicketRepository:
         return result.scalar_one_or_none()
 
     async def get_all(self,db: AsyncSession,status: StatusEnum | None = None,priority: PriorityEnum | None = None,) -> list[Ticket]:
-
         query = select(Ticket)
 
         if status is not None:

@@ -22,17 +22,9 @@ def init_db_connection() -> None:
     engine_args = {"echo": True}
     
     if "sqlite" in database_url:
-        engine_args.update({
-            "poolclass": StaticPool,
-            "connect_args": {"check_same_thread": False}
-        })
-    
+        engine_args.update({"poolclass": StaticPool,"connect_args": {"check_same_thread": False}})
     _engine = create_async_engine(database_url, **engine_args)
-    _session_maker = async_sessionmaker(
-        bind=_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
+    _session_maker = async_sessionmaker(bind=_engine,class_=AsyncSession,expire_on_commit=False,)
 
 init_db_connection()
 
@@ -40,20 +32,8 @@ def use_in_memory_fallback() -> None:
     global _engine, _session_maker
     logger.warning("PostgreSQL connection failed. Falling back to in-memory SQLite database.")
     fallback_url = "sqlite+aiosqlite:///:memory:"
-    _engine = create_async_engine(
-        fallback_url,
-        poolclass=StaticPool,
-        connect_args={"check_same_thread": False},
-        echo=True
-    )
-    _session_maker = async_sessionmaker(
-        bind=_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
-
-def is_in_memory() -> bool:
-    return _engine is not None and "sqlite" in str(_engine.url) and ":memory:" in str(_engine.url)
+    _engine = create_async_engine(fallback_url,poolclass=StaticPool,connect_args={"check_same_thread": False},echo=True)
+    _session_maker = async_sessionmaker(bind=_engine,class_=AsyncSession,expire_on_commit=False)
 
 class EngineProxy:
     def __getattr__(self, name):
