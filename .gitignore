@@ -5,6 +5,9 @@
 __pycache__/
 *.py[cod]
 
+
+#node modules
+.node_modules
 # Environment variables
 .env
 
@@ -17,3 +20,4 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
+
