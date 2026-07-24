@@ -33,4 +33,4 @@ class Ticket(Base):
     def validate_title(self, key, value):
         if not isinstance(value, str):
             raise TypeError("Title must be a string")
-        return value
+        return value 
